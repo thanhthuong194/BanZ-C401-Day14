@@ -2,7 +2,7 @@ from typing import List, Dict
 
 class RetrievalEvaluator:
     def __init__(self):
-        pass
+        self.name = "retrieval-evaluator"
 
     def calculate_hit_rate(self, expected_ids: List[str], retrieved_ids: List[str], top_k: int = 3) -> float:
         """
@@ -28,5 +28,49 @@ class RetrievalEvaluator:
         Chạy eval cho toàn bộ bộ dữ liệu.
         Dataset cần có trường 'expected_retrieval_ids' và Agent trả về 'retrieved_ids'.
         """
-        # Placeholder logic
-        return {"avg_hit_rate": 0.85, "avg_mrr": 0.72}
+        if not dataset:
+            return {
+                "avg_hit_rate": 0.0,
+                "avg_mrr": 0.0,
+                "total_cases": 0,
+                "valid_cases": 0,
+                "skipped_cases": 0
+            }
+
+        hit_scores: List[float] = []
+        mrr_scores: List[float] = []
+        skipped_cases = 0
+
+        for item in dataset:
+            expected_ids = item.get("expected_retrieval_ids") or []
+            retrieved_ids = item.get("retrieved_ids") or []
+            top_k = item.get("top_k", 3)
+
+            if not expected_ids or not retrieved_ids:
+                skipped_cases += 1
+                continue
+
+            hit_scores.append(
+                self.calculate_hit_rate(expected_ids, retrieved_ids, top_k=top_k)
+            )
+            mrr_scores.append(
+                self.calculate_mrr(expected_ids, retrieved_ids)
+            )
+
+        valid_cases = len(hit_scores)
+        if valid_cases == 0:
+            return {
+                "avg_hit_rate": 0.0,
+                "avg_mrr": 0.0,
+                "total_cases": len(dataset),
+                "valid_cases": 0,
+                "skipped_cases": skipped_cases
+            }
+
+        return {
+            "avg_hit_rate": sum(hit_scores) / valid_cases,
+            "avg_mrr": sum(mrr_scores) / valid_cases,
+            "total_cases": len(dataset),
+            "valid_cases": valid_cases,
+            "skipped_cases": skipped_cases
+        }

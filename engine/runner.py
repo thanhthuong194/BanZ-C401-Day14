@@ -11,29 +11,43 @@ class BenchmarkRunner:
 
     async def run_single_test(self, test_case: Dict) -> Dict:
         start_time = time.perf_counter()
-        
-        # 1. Gọi Agent
-        response = await self.agent.query(test_case["question"])
-        latency = time.perf_counter() - start_time
-        
-        # 2. Chạy RAGAS metrics
-        ragas_scores = await self.evaluator.score(test_case, response)
-        
-        # 3. Chạy Multi-Judge
-        judge_result = await self.judge.evaluate_multi_judge(
-            test_case["question"], 
-            response["answer"], 
-            test_case["expected_answer"]
-        )
-        
-        return {
-            "test_case": test_case["question"],
-            "agent_response": response["answer"],
-            "latency": latency,
-            "ragas": ragas_scores,
-            "judge": judge_result,
-            "status": "fail" if judge_result["final_score"] < 3 else "pass"
-        }
+
+        try:
+            # 1. Gọi Agent
+            response = await self.agent.query(test_case["question"])
+            latency = time.perf_counter() - start_time
+
+            # 2. Chạy RAGAS metrics
+            ragas_scores = await self.evaluator.score(test_case, response)
+
+            # 3. Chạy Multi-Judge
+            judge_result = await self.judge.evaluate_multi_judge(
+                test_case["question"],
+                response["answer"],
+                test_case["expected_answer"]
+            )
+
+            return {
+                "test_case": test_case["question"],
+                "agent_response": response["answer"],
+                "latency": latency,
+                "ragas": ragas_scores,
+                "judge": judge_result,
+                "status": "fail" if judge_result["final_score"] < 3 else "pass"
+            }
+        except Exception as exc:
+            return {
+                "test_case": test_case.get("question", "unknown"),
+                "agent_response": "",
+                "latency": time.perf_counter() - start_time,
+                "ragas": {"retrieval": {"hit_rate": 0.0, "mrr": 0.0}},
+                "judge": {
+                    "final_score": 1.0,
+                    "agreement_rate": 0.0,
+                    "error": str(exc),
+                },
+                "status": "fail"
+            }
 
     async def run_all(self, dataset: List[Dict], batch_size: int = 5) -> List[Dict]:
         """

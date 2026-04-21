@@ -70,8 +70,9 @@ async def generate_qa_from_text(llm, doc) -> List[Dict]:
 
 async def main():
     print("🚀 Khởi động quá trình Sinh dữ liệu tự động (SDG)...")
-    
-    data_path = "C:/Users/letung373/Desktop/BanZ-C401-Day14/raw_data"
+
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    data_path = os.path.join(repo_root, "raw_data")
     if not os.path.exists(data_path):
         os.makedirs(data_path)
         print(f"ERROR Thư mục {data_path} trống. Hãy copy các file PDF vào đây!")

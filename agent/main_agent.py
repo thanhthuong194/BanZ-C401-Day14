@@ -5,7 +5,7 @@ from typing import List, Dict
 from dotenv import load_dotenv
 
 # Import các thư viện từ Cairo RAG
-from langchain_deepseek import ChatDeepSeek
+from langchain_openai import ChatOpenAI
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.prompts import PromptTemplate
@@ -14,24 +14,23 @@ class MainAgent:
     def __init__(self):
         self.name = "CairoRAG-Streaming-v1"
         load_dotenv()
-        
-        # Khởi tạo tương tự như trước
+
         self.embeddings = HuggingFaceEmbeddings(
             model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
-            model_kwargs={'device': 'cpu'} 
+            model_kwargs={'device': 'cpu'}
         )
-        
+
         self.vector_db = Chroma(
             persist_directory="vector_db/",
             embedding_function=self.embeddings
         )
         self.retriever = self.vector_db.as_retriever(search_kwargs={"k": 3})
 
-        self.llm = ChatDeepSeek(
-            model='deepseek-chat', 
-            api_key=os.getenv("DEEPSEEK_API_KEY"),
+        self.llm = ChatOpenAI(
+            model="gpt-4o-mini",
+            api_key=os.getenv("OPENAI_API_KEY"),
             temperature=0.1,
-            streaming=True # Bật streaming mode
+            streaming=True,
         )
 
         self.prompt_template = PromptTemplate(
@@ -49,7 +48,10 @@ class MainAgent:
         """
         # 1. RETRIEVAL
         docs = self.retriever.invoke(question)
-        retrieved_ids = [f"{doc.metadata.get('source', 'unknown')}_page_{doc.metadata.get('page', 'unknown')}" for doc in docs]
+        retrieved_ids = [
+            f"{os.path.basename(doc.metadata.get('source', 'unknown'))}_page_{doc.metadata.get('page', 'unknown')}"
+            for doc in docs
+        ]
         context_str = "\n\n".join([doc.page_content for doc in docs])
 
         # 2. GENERATION (STREAMING)

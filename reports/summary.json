@@ -2,11 +2,12 @@
   "metadata": {
     "version": "Agent_V2_Optimized",
     "total": 60,
-    "timestamp": "2026-04-21 15:43:08"
+    "timestamp": "2026-04-21 18:15:24"
   },
   "metrics": {
-    "avg_score": 4.5,
-    "hit_rate": 1.0,
-    "agreement_rate": 0.8
+    "avg_score": 2.6083333333333334,
+    "hit_rate": 0.3,
+    "avg_mrr": 0.23055555555555557,
+    "agreement_rate": 0.6916666666666667
   }
 }
